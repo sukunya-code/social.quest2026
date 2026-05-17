@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>หมู่บ้านปันสุข — บันทึกภาคสนาม</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* ══════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════ */
+:root {
+  --bg:       #f5f0e8;
+  --surface:  #faf7f2;
+  --card:     #ffffff;
+  --border:   #e8e0d0;
+  --ink:      #27201a;
+  --ink-2:    #5c4f3d;
+  --ink-3:    #9c8e7c;
+  --ink-4:    #c4b89e;
+  --sage:     #4a6741;
+  --sage-2:   #6a9465;
+  --sage-3:   #b8d4b2;
+  --sage-4:   #e8f2e6;
+  --amber:    #c4852a;
+  --amber-2:  #e8b865;
+  --amber-3:  #fdf4e3;
+  --red:      #b84040;
+  --shadow-sm:  0 1px 4px rgba(39,32,26,0.06), 0 2px 12px rgba(39,32,26,0.04);
+  --shadow-md:  0 4px 16px rgba(39,32,26,0.08), 0 12px 40px rgba(39,32,26,0.06);
+  --shadow-lg:  0 8px 32px rgba(39,32,26,0.10), 0 32px 80px rgba(39,32,26,0.08);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+}
+
+/* ══════════════════════════════════
+   RESET & BASE
+══════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  font-weight: 400;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+}
+
+/* ══════════════════════════════════
+   BACKGROUND ATMOSPHERE
+══════════════════════════════════ */
+.bg-layer {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  overflow: hidden;
+}
+.bg-orb {
+  position: absolute; border-radius: 50%;
+  filter: blur(100px);
+}
+.orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, #7aaa6e44, transparent 70%); top: -200px; left: -150px; animation: orb-drift 20s ease-in-out infinite; }
+.orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, #c9a84c33, transparent 70%); bottom: -150px; right: -100px; animation: orb-drift 25s ease-in-out infinite reverse; }
+.orb-3 { width: 350px; height: 350px; background: radial-gradient(circle, #b86a4428, transparent 70%); top: 45%; left: 55%; animation: orb-drift 30s ease-in-out infinite 5s; }
+
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 30px) scale(0.96); }
+}
+
+/* Subtle paper grain */
+.bg-layer::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 1;
+}
+
+/* Floating particles */
+#particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.particle {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: rgba(90,120,80,0.35);
+  animation: floatUp linear infinite;
+}
+@keyframes floatUp {
+  0%   { transform: translateY(0) translateX(0); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 0.3; }
+  100% { transform: translateY(-100vh) translateX(15px); opacity: 0; }
+}
+
+/* ══════════════════════════════════
+   HUD
+══════════════════════════════════ */
+#hud {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  padding: 12px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: linear-gradient(to bottom, rgba(245,240,232,0.97) 60%, transparent);
+  backdrop-filter: blur(16px);
+  opacity: 0; transition: opacity 0.6s ease;
+  pointer-events: none;
+  border-bottom: 1px solid rgba(232,224,208,0.5);
+}
+#hud.visible { opacity: 1; pointer-events: auto; }
+
+.hud-left { display: flex; flex-direction: column; gap: 2px; }
+.hud-tag  { font-size: 10px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); }
+.hud-day  { font-size: 15px; font-weight: 600; color: var(--ink-2); }
+
+/* 7-pip day tracker */
+.day-pips { display: flex; gap: 5px; margin-top: 5px; }
+.day-pip {
+  width: 20px; height: 5px; border-radius: 99px;
+  background: var(--border);
+  transition: background 0.4s ease, transform 0.3s ease;
+}
+.day-pip.done { background: var(--sage-2); }
+.day-pip.active { background: var(--sage); transform: scaleY(1.4); }
+
+.trust-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.trust-label-row { display: flex; align-items: center; justify-content: space-between; width: 140px; }
+.trust-label { font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); }
+.trust-pct { font-size: 11px; font-weight: 700; color: var(--sage); transition: color 0.4s; }
+.trust-track {
+  width: 140px; height: 7px;
+  background: var(--sage-3); border-radius: 99px; overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+}
+.trust-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sage), var(--sage-2));
+  border-radius: 99px;
+  transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+  position: relative;
+}
+.trust-fill::after {
+  content: '';
+  position: absolute; right: 0; top: 0; bottom: 0; width: 8px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 99px;
+}
+
+/* ══════════════════════════════════
+   AUDIO BAR
+══════════════════════════════════ */
+#audio-bar {
+  position: fixed; bottom: 20px; right: 20px; z-index: 50;
+  background: rgba(250,247,242,0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 8px 14px 8px 10px;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+#audio-bar.collapsed { padding: 8px 10px; }
+#audio-bar.collapsed .audio-expandable { display: none; }
+.audio-expandable { display: flex; align-items: center; gap: 8px; }
+.audio-btn {
+  width: 32px; height: 32px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-2); display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; transition: all 0.2s;
+}
+.audio-btn:hover { background: var(--sage-4); color: var(--sage); }
+.audio-btn svg { width: 16px; height: 16px; }
+#vol-slider {
+  -webkit-appearance: none; width: 64px; height: 3px;
+  background: var(--sage-3); border-radius: 3px; outline: none; cursor: pointer;
+}
+#vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--sage); cursor: pointer;
+  transition: transform 0.15s;
+}
+#vol-slider::-webkit-slider-thumb:hover { transform: scale(1.3); }
+.audio-label { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.audio-status { font-size: 10px; color: var(--ink-4); margin-left: 2px; }
+@media (max-width: 480px) {
+  #audio-bar { bottom: 14px; right: 14px; }
+}
+
+/* ══════════════════════════════════
+   VIEWPORT & CARD
+══════════════════════════════════ */
+#viewport {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 20px;
+}
+
+.journal-card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  max-width: 600px; width: 100%;
+  padding: 52px 48px 44px;
+  position: relative;
+  border: 1px solid var(--border);
+}
+
+/* Top accent line */
+.journal-card::before {
+  content: '';
+  position: absolute; top: 0; left: 48px; right: 48px; height: 3px;
+  background: linear-gradient(90deg, var(--sage) 0%, var(--amber-2) 100%);
+  border-radius: 0 0 3px 3px;
+}
+
+@media (max-width: 640px) {
+  .journal-card { padding: 40px 24px 36px; border-radius: var(--radius-lg); }
+  .journal-card::before { left: 24px; right: 24px; }
+}
+
+/* ══════════════════════════════════
+   SCREENS
+══════════════════════════════════ */
+.screen { display: none; }
+.screen.active {
+  display: block;
+  animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════
+   UNIFIED TYPOGRAPHY SYSTEM
+══════════════════════════════════ */
+.tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.tag-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--sage); flex-shrink: 0;
+}
+
+h1, .h1 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700; line-height: 1.25;
+  color: var(--ink); letter-spacing: -0.02em;
+}
+h2, .h2 {
+  font-size: clamp(1.25rem, 3.5vw, 1.65rem);
+  font-weight: 600; line-height: 1.35;
+  color: var(--ink); letter-spacing: -0.01em;
+}
+h3, .h3 {
+  font-size: 1.1rem; font-weight: 600;
+  color: var(--ink); line-height: 1.4;
+}
+
+.body-lg { font-size: 1rem; font-weight: 400; line-height: 1.9; color: var(--ink-2); }
+.body-md { font-size: 0.93rem; font-weight: 400; line-height: 1.85; color: var(--ink-2); }
+.body-sm { font-size: 0.82rem; font-weight: 400; line-height: 1.75; color: var(--ink-3); }
+
+.italic-quote {
+  font-style: italic; font-weight: 300;
+  font-size: 1rem; line-height: 2.0;
+  color: var(--ink-2);
+}
+
+/* ══════════════════════════════════
+   BUTTONS
+══════════════════════════════════ */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 28px;
+  background: var(--sage);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-family: 'Sarabun', sans-serif;
+  font-size: 14px; font-weight: 600;
+  letter-spacing: 0.03em;
+  border: none; cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 2px 8px rgba(74,103,65,0.3), 0 6px 20px rgba(74,103,65,0.15);
+}
+.btn-primary:hover {
+  background: var(--sage-2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(74,103,65,0.35), 0 10px 30px rgba(74,103,65,0.18);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-primary svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 11px 22px;
+  background: var(--card);
+  color: var(--ink-2);
+  border-radius: var(--radius-md);
+  font-family: 'Sarabun', sans-serif;
+  font-size: 13px; font-weight: 600;
+  border: 1.5px solid var(--border); cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.btn-secondary:hover { border-color: var(--sage-3); background: var(--sage-4); color: var(--sage); }
+.btn-secondary svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.btn-text {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-3);
+  padding: 8px 4px;
+  border-bottom: 1.5px solid transparent;
+  transition: all 0.2s;
+}
+.btn-text:hover { color: var(--ink); border-color: var(--ink-3); }
+.btn-text svg { width: 14px; height: 14px; }
+
+/* Disabled state */
+button:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+/* ══════════════════════════════════
+   DIVIDER
+══════════════════════════════════ */
+.divider {
+  border: none; border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+
+/* ══════════════════════════════════
+   PAGE NUMBER
+══════════════════════════════════ */
+.page-num {
+  position: absolute; bottom: 18px; right: 28px;
+  font-size: 11px; font-weight: 500; color: var(--ink-4);
+  letter-spacing: 0.12em;
+}
+
+/* ══════════════════════════════════
+   STAMP / BADGE
+══════════════════════════════════ */
+.badge-stamp {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border: 1.5px solid var(--amber-2);
+  border-radius: var(--radius-sm);
+  background: var(--amber-3);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--amber);
+  transform: rotate(-1.5deg);
+}
+.badge-stamp svg { width: 12px; height: 12px; }
+
+/* ══════════════════════════════════
+   NAME INPUT
+══════════════════════════════════ */
+.name-input-wrap {
+  position: relative; margin-bottom: 32px;
+}
+.name-input {
+  width: 100%;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 64px 16px 48px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 1.1rem; font-weight: 500;
+  color: var(--ink);
+  transition: border-color 0.25s, box-shadow 0.25s;
+  outline: none;
+}
+.name-input::placeholder { color: var(--ink-4); font-weight: 400; }
+.name-input:focus {
+  border-color: var(--sage);
+  box-shadow: 0 0 0 3px rgba(74,103,65,0.1);
+}
+.name-input-icon {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--ink-3); pointer-events: none;
+}
+.name-input-icon svg { width: 18px; height: 18px; }
+.name-char-count {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 11px; color: var(--ink-4); font-weight: 500;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════
+   GENDER GRID
+══════════════════════════════════ */
+.gender-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin: 24px 0;
+}
+@media (max-width: 380px) {
+  .gender-grid { grid-template-columns: repeat(2, 1fr); }
+  .gender-grid .g-card:last-child { grid-column: 1 / -1; }
+}
+
+.g-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 12px 16px;
+  cursor: pointer; text-align: center;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.g-card:hover {
+  border-color: var(--sage-3); background: var(--sage-4);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.g-card.sel {
+  border-color: var(--sage); background: var(--sage-4);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 16px rgba(74,103,65,0.18);
+}
+.g-card.sel .g-name { color: var(--sage); }
+
+.g-icon-wrap {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--sage-4);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.g-card.sel .g-icon-wrap { background: rgba(74,103,65,0.15); }
+.g-icon-wrap svg { width: 24px; height: 24px; color: var(--sage); }
+.g-name { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.g-sub  { font-size: 11px; font-weight: 400; color: var(--ink-3); }
+
+/* Avatar ring */
+.avatar-ring {
+  width: 76px; height: 76px; border-radius: 50%;
+  background: var(--sage-4);
+  border: 2px solid var(--sage-3);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  transition: all 0.3s;
+}
+.avatar-ring svg { width: 38px; height: 38px; color: var(--sage); }
+
+/* Pronoun chips */
+.pronoun-area {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px; margin-top: 12px;
+}
+.pronoun-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+.p-chip {
+  padding: 6px 14px; border-radius: 99px;
+  font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--border);
+  cursor: pointer; background: var(--surface); color: var(--ink-2);
+  transition: all 0.18s;
+}
+.p-chip:hover { border-color: var(--sage-3); background: var(--sage-4); color: var(--sage); }
+.p-chip.on { background: var(--sage); border-color: var(--sage); color: #fff; }
+
+/* ══════════════════════════════════
+   INTERLUDE
+══════════════════════════════════ */
+.interlude-icon {
+  width: 56px; height: 56px;
+  background: var(--sage-4); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 28px;
+  opacity: 0.9;
+}
+.interlude-icon svg { width: 28px; height: 28px; color: var(--sage); }
+.interlude-text {
+  font-style: italic; font-weight: 300;
+  font-size: 1rem; line-height: 2.05;
+  color: var(--ink-2); text-align: center;
+}
+
+/* ══════════════════════════════════
+   DAY BADGE
+══════════════════════════════════ */
+.day-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--sage-4);
+  border: 1px solid var(--sage-3);
+  padding: 5px 14px; border-radius: 99px;
+  margin-bottom: 16px;
+}
+.day-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); }
+.day-badge-label { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); }
+
+/* Scene title & desc */
+.scene-title {
+  font-size: clamp(1.1rem, 3vw, 1.45rem);
+  font-weight: 600; color: var(--ink);
+  line-height: 1.4; margin-bottom: 12px;
+}
+.scene-desc {
+  font-size: 0.93rem; font-weight: 400; line-height: 1.9;
+  color: var(--ink-2);
+  max-width: 90%; margin: 0 auto 28px;
+  text-align: center;
+}
+
+/* ══════════════════════════════════
+   CHOICE CARDS
+══════════════════════════════════ */
+.choice-list { display: flex; flex-direction: column; gap: 9px; }
+
+.c-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  cursor: pointer; text-align: left;
+  transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+  display: flex; align-items: flex-start; gap: 14px;
+  box-shadow: var(--shadow-sm);
+  position: relative; overflow: hidden;
+}
+.c-card:hover {
+  border-color: var(--sage-3);
+  background: var(--sage-4);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md);
+}
+.c-card:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 2px;
+  border-color: var(--sage);
+}
+.c-card.chosen {
+  border-color: var(--sage);
+  background: var(--sage-4);
+  transform: translateX(4px) scale(1.005);
+}
+.c-card-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--sage-4); border: 1px solid var(--sage-3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--sage);
+  flex-shrink: 0; margin-top: 2px;
+  transition: background 0.2s;
+}
+.c-card:hover .c-card-num,
+.c-card.chosen .c-card-num { background: var(--sage); color: #fff; border-color: var(--sage); }
+.c-card-text { font-size: 0.92rem; font-weight: 400; color: var(--ink-2); line-height: 1.75; flex: 1; }
+.c-card-type-badge {
+  flex-shrink: 0; margin-top: 3px;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0.55; transition: opacity 0.2s;
+}
+.c-card:hover .c-card-type-badge,
+.c-card.chosen .c-card-type-badge { opacity: 0.9; }
+.c-card-type-badge.type-H { background: rgba(184,64,64,0.1); color: var(--red); }
+.c-card-type-badge.type-P { background: rgba(74,103,65,0.1); color: var(--sage); }
+.c-card-type-badge.type-A { background: rgba(196,133,42,0.12); color: var(--amber); }
+.c-card-type-badge svg { width: 12px; height: 12px; }
+
+/* ══════════════════════════════════
+   REFLECTION OVERLAY
+══════════════════════════════════ */
+#reflection-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+#reflection-overlay.show { display: flex; }
+
+.reflect-bg {
+  position: absolute; inset: 0;
+  background: rgba(245,240,232,0.85);
+  backdrop-filter: blur(16px);
+}
+.reflect-card {
+  position: relative; z-index: 1;
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--amber-2);
+  max-width: 420px; width: 100%;
+  padding: 44px 40px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.88) translateY(24px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.reflect-icon-wrap {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--amber-3); border: 2px solid var(--amber-2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+.reflect-icon-wrap svg { width: 30px; height: 30px; color: var(--amber); }
+.reflect-text {
+  font-style: italic; font-weight: 300;
+  font-size: 0.98rem; line-height: 1.9;
+  color: var(--ink-2); margin-bottom: 16px;
+}
+.reflect-trust-delta {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 99px;
+  font-size: 12px; font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: 0.05em;
+}
+.reflect-trust-delta.pos { background: var(--sage-4); color: var(--sage); border: 1px solid var(--sage-3); }
+.reflect-trust-delta.neg { background: #fef2f2; color: var(--red); border: 1px solid #fca5a5; }
+.reflect-trust-delta svg { width: 12px; height: 12px; }
+
+/* ══════════════════════════════════
+   CONCLUSION
+══════════════════════════════════ */
+.conclusion-avatar-wrap {
+  width: 120px; height: 120px; border-radius: 50%;
+  background: var(--sage-4); border: 3px solid var(--sage-3);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 8px;
+  animation: floatBob 3s ease-in-out infinite;
+  box-shadow: 0 8px 32px rgba(74,103,65,0.18);
+}
+@keyframes floatBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.conclusion-avatar-wrap svg { width: 60px; height: 60px; color: var(--sage); }
+
+.conclusion-badge-wrap {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--amber-3); border: 2px solid var(--amber-2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px;
+  animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196,133,42,0.3); }
+  50% { box-shadow: 0 0 0 10px rgba(196,133,42,0); }
+}
+.conclusion-badge-wrap svg { width: 26px; height: 26px; color: var(--amber); }
+
+.conclusion-title {
+  font-size: clamp(1rem, 3vw, 1.3rem);
+  font-weight: 700; color: var(--ink);
+  line-height: 1.5; margin-bottom: 16px; white-space: pre-line;
+}
+.conclusion-desc {
+  font-size: 0.93rem; font-weight: 400; line-height: 1.9;
+  color: var(--ink-2); max-width: 88%; margin: 0 auto 24px;
+  text-align: center;
+}
+
+/* Stat bars */
+.stat-bars {
+  display: flex; flex-direction: column; gap: 8px;
+  max-width: 280px; margin: 0 auto 28px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px 18px;
+}
+.stat-row { display: flex; align-items: center; gap: 10px; }
+.stat-label { font-size: 11px; font-weight: 700; color: var(--ink-3); width: 72px; text-align: right; flex-shrink: 0; }
+.stat-track { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.stat-bar { height: 100%; border-radius: 99px; transition: width 1s cubic-bezier(0.4,0,0.2,1); width: 0; }
+.stat-bar.H { background: linear-gradient(90deg, var(--red), #e86060); }
+.stat-bar.P { background: linear-gradient(90deg, var(--sage), var(--sage-2)); }
+.stat-bar.A { background: linear-gradient(90deg, var(--amber), var(--amber-2)); }
+.stat-count { font-size: 11px; font-weight: 700; color: var(--ink-2); width: 12px; flex-shrink: 0; }
+
+/* ══════════════════════════════════
+   UTILITY
+══════════════════════════════════ */
+.text-center { text-align: center; }
+.block { display: block; }
+.mt-2 { margin-top: 8px; }   .mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }  .mt-5 { margin-top: 20px; }
+.mt-6 { margin-top: 24px; }  .mt-8 { margin-top: 32px; }
+.mt-10{ margin-top: 40px; }
+.mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }.mb-5 { margin-bottom: 20px; }
+.mb-6 { margin-bottom: 24px; }.mb-8 { margin-bottom: 32px; }
+.mb-10{ margin-bottom: 40px; }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-layer">
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+</div>
+<div id="particles"></div>
+
+<!-- HUD -->
+<nav id="hud">
+  <div class="hud-left">
+    <span class="hud-tag">บันทึกภาคสนาม</span>
+    <span class="hud-day" id="hud-day">วันที่ 1 จาก 7</span>
+    <div class="day-pips" id="day-pips">
+      <div class="day-pip active"></div>
+      <div class="day-pip"></div>
+      <div class="day-pip"></div>
+      <div class="day-pip"></div>
+      <div class="day-pip"></div>
+      <div class="day-pip"></div>
+      <div class="day-pip"></div>
+    </div>
+  </div>
+  <div class="trust-wrap">
+    <div class="trust-label-row">
+      <span class="trust-label">ความเชื่อใจ</span>
+      <span class="trust-pct" id="trust-pct">50%</span>
+    </div>
+    <div class="trust-track"><div class="trust-fill" id="trust-fill" style="width:50%"></div></div>
+  </div>
+</nav>
+
+<!-- Audio bar -->
+<div id="audio-bar">
+  <button class="audio-btn" id="play-btn" onclick="toggleAudio()" aria-label="เปิด/ปิดเสียง">
+    <svg id="icon-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    <svg id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+  </button>
+  <div class="audio-expandable">
+    <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.35" oninput="setVolume(this.value)">
+    <span class="audio-label">เพลงบรรเลง</span>
+  </div>
+</div>
+
+<!-- Main viewport -->
+<div id="viewport">
+  <div class="journal-card" id="journal">
+
+    <!-- ══ START SCREEN ══ -->
+    <div class="screen active" id="s-start">
+      <div class="text-center">
+        <div class="tag mb-6 block" style="justify-content:center">
+          <span class="tag-dot"></span>ภาคสนาม — บันทึก #01
+        </div>
+        <div class="badge-stamp mb-5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          นักพัฒนาสังคม
+        </div>
+        <h1 class="mt-4 mb-3">หมู่บ้านปันสุข</h1>
+        <p class="body-md mb-8" style="font-style:italic">
+          เรื่องราว 7 วัน ของนักพัฒนาสังคม<br>ที่เข้าไปเปลี่ยนแปลงชุมชนเล็กๆ แห่งหนึ่ง
+        </p>
+        <hr class="divider">
+        <p class="body-md mb-10">
+          คุณไม่ได้มาเพื่อแจกเงิน หรือสั่งให้ใครทำอะไร<br>
+          คุณมาเป็น <strong>"คนช่วยคิด คนช่วยทำ"</strong> เคียงข้างชาวบ้าน<br>
+          ให้เขาลุกขึ้นยืนได้ด้วยตัวเอง
+        </p>
+        <button class="btn-primary" onclick="goTo('s-name')">
+          เปิดบันทึก
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div class="page-num">01</div>
+    </div>
+
+    <!-- ══ NAME SCREEN ══ -->
+    <div class="screen" id="s-name">
+      <div class="tag mb-5 block" style="justify-content:center">
+        <span class="tag-dot"></span>ก่อนลงพื้นที่
+      </div>
+      <h2 class="text-center mb-8">เราจะเรียกคุณว่าอะไร?</h2>
+      <div class="name-input-wrap">
+        <span class="name-input-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        <input type="text" id="inp-name" class="name-input" maxlength="20"
+          placeholder="ชื่อเล่น หรือชื่อที่อยากให้เรียก..."
+          oninput="onNameInput()"
+          onkeydown="if(event.key==='Enter' && !document.getElementById('btn-name-next').disabled){ goToPrologue(); }">
+        <span class="name-char-count" id="name-count">0/20</span>
+      </div>
+      <div class="text-center">
+        <button class="btn-primary" id="btn-name-next" disabled onclick="goToPrologue();">
+          พร้อมลงพื้นที่
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div class="page-num">02</div>
+    </div>
+
+    <!-- ══ PROLOGUE SCREEN ══ -->
+    <div class="screen" id="s-prologue">
+      <div class="text-center">
+        <div class="tag mb-6 block" style="justify-content:center"><span class="tag-dot"></span>บันทึก — วันเดินทาง</div>
+        <p id="prologue-text" class="interlude-text mb-10"></p>
+        <button class="btn-primary" onclick="startGame()">
+          เดินเข้าสู่หมู่บ้าน
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div class="page-num">04</div>
+    </div>
+
+    <!-- ══ INTERLUDE SCREEN ══ -->
+    <div class="screen" id="s-interlude">
+      <div class="text-center">
+        <div class="interlude-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8C8 10 5.9 16.17 3.82 19.57A1 1 0 0 0 4.93 21C8 20 10 18 12 15c1.5 3 5 5 7 5 0-4-2-8-2-12z"/></svg>
+        </div>
+        <p id="interlude-text" class="interlude-text mb-10"></p>
+        <button class="btn-text" onclick="goToScene()">
+          เดินต่อไป
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div class="page-num" id="interlude-page"></div>
+    </div>
+
+    <!-- ══ SCENE SCREEN ══ -->
+    <div class="screen" id="s-scene">
+      <div class="text-center mb-6">
+        <div class="day-badge">
+          <div class="day-badge-dot"></div>
+          <span class="day-badge-label" id="scene-day-label"></span>
+        </div>
+        <h2 class="scene-title" id="scene-title"></h2>
+        <p class="scene-desc" id="scene-desc"></p>
+      </div>
+      <div class="choice-list" id="choice-list"></div>
+      <div class="page-num" id="scene-page"></div>
+    </div>
+
+    <!-- ══ CONCLUSION SCREEN ══ -->
+    <div class="screen" id="s-conclusion">
+      <div class="text-center">
+        <div id="c-avatar" class="conclusion-avatar-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div id="c-badge" class="conclusion-badge-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div class="badge-stamp mb-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          บทสรุปการเดินทาง
+        </div>
+        <h2 class="conclusion-title" id="c-title"></h2>
+        <p class="conclusion-desc" id="c-desc"></p>
+
+        <!-- Stat bars -->
+        <div class="stat-bars">
+          <div class="stat-row">
+            <span class="stat-label">ใช้ใจ 💚</span>
+            <div class="stat-track"><div class="stat-bar H" id="stat-bar-H"></div></div>
+            <span class="stat-count" id="stat-count-H">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">วางแผน 🌿</span>
+            <div class="stat-track"><div class="stat-bar P" id="stat-bar-P"></div></div>
+            <span class="stat-count" id="stat-count-P">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">ลุยเลย 🛡️</span>
+            <div class="stat-track"><div class="stat-bar A" id="stat-bar-A"></div></div>
+            <span class="stat-count" id="stat-count-A">0</span>
+          </div>
+        </div>
+
+        <hr class="divider" style="max-width:160px;margin:0 auto 28px;">
+        <button class="btn-primary" onclick="location.reload()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.58"/></svg>
+          เริ่มต้นใหม่อีกครั้ง
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /journal-card -->
+</div><!-- /viewport -->
+
+<!-- Reflection overlay -->
+<div id="reflection-overlay">
+  <div class="reflect-bg"></div>
+  <div class="reflect-card">
+    <div id="r-icon" class="reflect-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    </div>
+    <p id="r-text" class="reflect-text"></p>
+    <div id="r-delta" class="reflect-trust-delta pos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+      <span id="r-delta-text">ความเชื่อใจ +10</span>
+    </div>
+    <button class="btn-primary" onclick="nextStep()">
+      ไปวันต่อไป
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════
+   SVG ICON HELPERS
+═══════════════════════════════ */
+const SVG = {
+  male: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M16 20v-2a4 4 0 0 0-8 0v2"/></svg>`,
+  female: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M12 14v7"/><path d="M9 18h6"/></svg>`,
+  lgbtq: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>`,
+  heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  leaf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8C8 10 5.9 16.17 3.82 19.57A1 1 0 0 0 4.93 21C8 20 10 18 12 15c1.5 3 5 5 7 5 0-4-2-8-2-12z"/></svg>`,
+  shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  star: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  person: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+};
+
+/* ════════════════════════════════
+   STATE
+═══════════════════════════════ */
+let pName = '', pAvatar = 'person';
+let dayIdx = 0, trust = 50;
+let stats = { H:0, P:0, A:0 };
+
+/* ════════════════════════════════
+   NAVIGATION
+═══════════════════════════════ */
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = '';
+}
+
+/* ════════════════════════════════
+   FLOW
+═══════════════════════════════ */
+function goToPrologue() {
+  pName = document.getElementById('inp-name').value.trim() || 'คนใจดี';
+
+  document.getElementById('prologue-text').innerText =
+    `ยินดีที่รู้จักนะ ${pName}... ในฐานะนักพัฒนาสังคมที่กำลังจะลงพื้นที่หมู่บ้านปันสุขเป็นครั้งแรก\n\nหน้าที่ของคุณตลอด 7 วันนี้ ไม่ใช่การเอาเงินมาแจก หรือมาสั่งให้ใครทำอะไร — แต่คือการเป็น "เพื่อน" และ "ผู้ช่วย" ให้ชาวบ้านลุกขึ้นยืนได้ด้วยตัวเอง\n\nบันทึกการเดินทางนี้จะบอกว่า... คุณเป็นนักพัฒนาสังคมแบบไหน?`;
+
+  goTo('s-prologue');
+}
+
+function startGame() {
+  document.getElementById('hud').classList.add('visible');
+  showInterlude();
+}
+
+/* ════════════════════════════════
+   SCENARIOS
+═══════════════════════════════ */
+const scenarios = [
+  {
+    interlude: "วันแรกของการลงพื้นที่... คุณสะพายเป้เดินผ่านกอไผ่ผืนใหญ่หน้าหมู่บ้าน เสียงกอไผ่เสียดสีกันดังเอี๊ยดอ๊าด พอเดินเข้าไปใกล้ๆ คุณก็เจอลุงคนหนึ่งยืนชี้ไม้ชี้มือไปที่ตอไผ่ หน้าตาแกดูทั้งงงทั้งหงุดหงิด",
+    title: "วันที่ 1: ปริศนาหน่อไม้ที่หายไป",
+    desc: "ลุงทวีโวยวายเสียงดังว่า 'หน่อไม้ที่เฝ้าไว้หายไปไหนหมด!' ทั้งที่ความจริงแล้วหน่อไม้มันแค่โตกลายเป็นต้นไผ่ไปแล้ว ลุงแกไม่ได้บ้าหรอก แกแค่สับสนและจำไม่ได้... แต่ชาวบ้านคนอื่นเริ่มซุบซิบนินทาแกแล้วสิ",
+    choices: [
+      { text:"ชวนชาวบ้านมาช่วยกันดูแลกอไผ่ และตกลงกันว่าจะแบ่งหน่อไม้กันกินยังไงให้ยุติธรรม", type:"P", impact:15, msg:"คุณเลือกที่จะเปลี่ยนความโวยวาย ให้กลายเป็นการตั้งกติกาแบ่งปันของชาวบ้าน" },
+      { text:"เดินเข้าไปจับมือลุง นั่งฟังลุงบ่นให้จบ แล้วค่อยๆ ชวนลุงไปหาปลูกต้นไม้อย่างอื่นแทน", type:"H", impact:10, msg:"คุณใช้ความใจเย็นเยียวยาความสับสนของลุง ให้ลุงรู้สึกว่ายังมีคนรับฟังแกอยู่" },
+      { text:"ตั้งกฎหมู่บ้านไปเลยว่าใครแอบมาขโมยของส่วนรวมจะต้องโดนปรับ จะได้ไม่มีใครกล้าทำ", type:"A", impact:5,  msg:"คุณมองว่าเรื่องนี้ต้องแก้ด้วยการตั้งกฎให้เด็ดขาด ชาวบ้านจะได้อุ่นใจ" }
+    ]
+  },
+  {
+    interlude: "หลังจากช่วยลุงทวีไปเมื่อวาน วันนี้คุณเดินลึกเข้าไปในหมู่บ้าน เห็นรอยเท้าเด็กๆ เดินย่ำไปทางป่าละเมาะท้ายหมู่บ้าน คุณเลยลองเดินตามไปดู แล้วก็ไปเจอเพิงสังกะสีเก่าๆ ที่ถูกใช้เป็นห้องเรียน",
+    title: "วันที่ 2: ห้องเรียนใต้ต้นไม้ใหญ่",
+    desc: "เด็กๆ แถวนี้ไปโรงเรียนลำบาก เลยต้องมาเรียนกันในเพิงพังๆ ครูอาสาก็บอกว่าใกล้จะถอดใจแล้วเพราะไม่มีงบซื้อสมุดดินสอเลย พอเด็กๆ หันมาเห็นคุณ แววตาพวกเขาก็ดูมีความหวังขึ้นมาทันที",
+    choices: [
+      { text:"หาทุนและคนใจดีจากข้างนอก มาช่วยกันสร้างห้องเรียนใหม่ให้เด็กๆ", type:"P", impact:20, msg:"คุณมองหาวิธีแก้ปัญหาแบบระยะยาว เพื่อให้เด็กๆ มีที่เรียนดีๆ ตลอดไป" },
+      { text:"เปิดรับบริจาคของเล่นและสมุด แล้วอาสามาช่วยสอนเด็กๆ ในตอนเย็นด้วยตัวเอง", type:"H", impact:15, msg:"การลงไปคลุกคลีและเล่นกับเด็กๆ ด้วยตัวเอง คือการให้กำลังใจที่ดีที่สุด" },
+      { text:"ถ่ายรูป รวบรวมข้อมูล แล้วเอาไปยื่นเรื่องให้หน่วยงานรัฐเข้ามาช่วยเหลือด่วน", type:"A", impact:10, msg:"คุณเชื่อว่าเด็กๆ ควรได้รับสวัสดิการการศึกษาที่ดีจากรัฐอย่างเต็มที่" }
+    ]
+  },
+  {
+    interlude: "คืนที่สองคุณนอนพักที่ศาลาหมู่บ้าน เช้ามาคุณเดินผ่านบ้านไม้ใต้ถุนสูง ได้กลิ่นไม้หอมๆ ลอยมา พอมองไปก็เห็นผู้ชายคนหนึ่งกำลังนั่งสานตะกร้าด้วยแขนข้างเดียวที่เหลืออยู่ แต่ตะกร้ากลับออกมาสวยเนี๊ยบมาก",
+    title: "วันที่ 3: ตะกร้าที่ไม่มีใครเห็นค่า",
+    desc: "พี่ชัยเคยเป็นช่างฝีมือดี แต่พอเกิดอุบัติเหตุจนพิการ แกก็เก็บตัวเงียบ ไม่ค่อยพูดกับใคร แกบ่นว่าสานตะกร้าไปก็ไม่มีใครซื้อ รู้สึกว่าตัวเองกลายเป็นภาระของคนอื่น",
+    choices: [
+      { text:"ช่วยพี่ชัยออกแบบตะกร้าให้ดูทันสมัยขึ้น แล้วเอาไปโพสต์ขายบนอินเทอร์เน็ต", type:"P", impact:20, msg:"คุณช่วยให้พี่ชัยมีรายได้หาเลี้ยงตัวเองได้ จะได้กลับมาภูมิใจในตัวเองอีกครั้ง" },
+      { text:"ชวนพี่ชัยไปเป็นครูสอนเด็กๆ สานตะกร้า ให้พี่แกรู้สึกว่าวิชาความรู้ของแกยังมีประโยชน์", type:"H", impact:15, msg:"คุณดึงคุณค่าในตัวพี่ชัยออกมา ให้แกรู้สึกว่าแกยังเป็นคนสำคัญของหมู่บ้าน" },
+      { text:"อาสาพาพี่ชัยไปทำบัตรคนพิการให้เรียบร้อย เพื่อให้ได้เงินช่วยเหลือทุกเดือน", type:"A", impact:10, msg:"คุณช่วยให้พี่ชัยเข้าถึงสิทธิ์ที่ควรจะได้ เพื่อความมั่นคงในชีวิตของแก" }
+    ]
+  },
+  {
+    interlude: "เข้าวันที่สี่ อากาศร้อนจัด คุณเดินไปนั่งพักใต้ต้นไทรใหญ่หน้าหมู่บ้าน เห็นกลุ่มคุณยายกำลังนั่งคุยกันหน้าตาเคร่งเครียด พอเข้าไปทักทายถึงรู้ว่าพวกยายกำลังกลุ้มใจเรื่องสุขภาพ",
+    title: "วันที่ 4: ไปหาหมอทีไร... ลำบากทุกที",
+    desc: "คนแก่ในหมู่บ้านนี้ไปโรงพยาบาลลำบากมาก ค่ารถก็แพง ลูกหลานก็ไปทำงานในเมืองหมด หลายคนป่วยก็ต้องทนปวดเอา เพราะไม่อยากเป็นภาระใคร",
+    choices: [
+      { text:"ชวนคนหนุ่มสาวในหมู่บ้านมาตั้งกองทุนเล็กๆ ไว้เป็นค่ารถพาคนแก่ไปหาหมอ", type:"P", impact:20, msg:"คุณสร้างระบบให้คนในหมู่บ้านช่วยเหลือเกื้อกูลกันเอง ไม่ต้องรอพึ่งคนอื่น" },
+      { text:"แวะไปเยี่ยมคนแก่ตามบ้าน ชวนคุยเล่น นวดเฟ้นให้คลายเหงา คลายปวดเมื่อย", type:"H", impact:15, msg:"แค่มีคนแวะไปถามไถ่ ก็เป็นยาชูกำลังใจชั้นดีให้คนแก่แล้ว" },
+      { text:"ติดต่อโรงพยาบาล ขอให้ส่งรถพยาบาลเคลื่อนที่เข้ามาตรวจคนแก่ถึงในหมู่บ้าน", type:"A", impact:10, msg:"คุณช่วยประสานงาน ดึงเอาบริการของรัฐให้เข้าถึงชาวบ้านได้ง่ายขึ้น" }
+    ]
+  },
+  {
+    interlude: "เมื่อคืนมีพายุเข้า ฝนตกหนักมาก พอตอนเช้าคุณเดินไปดูที่โรงเพาะเห็ดของกลุ่มแม่บ้าน ก็พบว่าหลังคาพังยับเยิน ป้าๆ ยืนมองซากโรงเห็ดด้วยสายตาที่สิ้นหวังสุดๆ",
+    title: "วันที่ 5: พายุที่พัดพากำลังใจ",
+    desc: "รายได้หลักของกลุ่มแม่บ้านปลิวไปกับพายุเมื่อคืน พวกป้าๆ เริ่มร้องไห้และบอกว่าอยากล้มเลิกโครงการนี้แล้ว เพราะทำไปก็ขาดทุน สู้แรงลมฟ้าอากาศไม่ไหว",
+    choices: [
+      { text:"ชวนป้าๆ มานั่งคุยกัน หาจุดอ่อน แล้วช่วยกันซ่อมโรงเห็ดให้แข็งแรงกว่าเดิม", type:"P", impact:25, msg:"คุณสอนให้พวกป้าๆ เรียนรู้จากความผิดพลาด เพื่อก้าวต่อไปให้มั่นคงกว่าเดิม" },
+      { text:"เข้าไปกอดป้าๆ บอกว่าร้องไห้ออกมาเลย ไม่เป็นไรนะ ยังมีเราคอยช่วยอยู่ตรงนี้", type:"H", impact:20, msg:"ในวันที่ชาวบ้านท้อแท้ที่สุด การมีคนอยู่เคียงข้างสำคัญกว่าเงินทอง" },
+      { text:"ช่วยเดินเรื่องเอกสาร ไปยื่นขอเงินชดเชยน้ำท่วมพายุเข้าจากรัฐให้กลุ่มแม่บ้าน", type:"A", impact:15, msg:"คุณรับหน้าที่เป็นตัวแทน วิ่งเต้นหาความช่วยเหลือที่รวดเร็วและตรงจุดให้ชาวบ้าน" }
+    ]
+  },
+  {
+    interlude: "เช้าวันที่หก บรรยากาศดูสดใสขึ้นมาก ลุงทวีเริ่มยิ้มได้ เด็กๆ มีที่เรียน ป้าๆ เริ่มซ่อมโรงเห็ด แต่แล้วคุณก็ได้ยินว่ามีคนพยายามจะฮุบเงินกองทุนหมู่บ้านไปใช้ส่วนตัว",
+    title: "วันที่ 6: บททดสอบความซื่อสัตย์",
+    desc: "เมื่อหมู่บ้านเริ่มมีเงินทุนไหลเข้ามา ก็มีคนบางกลุ่มอยากฉวยโอกาสเอาเปรียบ ถ้าปล่อยไว้แบบนี้ ความเชื่อใจที่อุตส่าห์สร้างมาตลอดหลายวันต้องพังทลายแน่ๆ",
+    choices: [
+      { text:"ชวนทุกคนมาตั้งกติกาเบิกจ่ายเงินให้ชัดเจน และให้ชาวบ้านสลับกันเป็นคนตรวจบัญชี", type:"P", impact:20, msg:"คุณสร้างกติกาที่โปร่งใส ให้ชาวบ้านช่วยกันเป็นหูเป็นตาดูแลเงินของตัวเอง" },
+      { text:"เรียกคนกลุ่มนั้นมาคุยเปิดอก ให้เห็นใจชาวบ้านว่าทุกคนเหนื่อยแค่ไหนกว่าจะได้เงินมา", type:"H", impact:15, msg:"คุณพยายามใช้ความดีและจริยธรรมดึงสติคน ให้เห็นแก่ประโยชน์ส่วนรวม" },
+      { text:"ทำข้อตกลงเป็นลายลักษณ์อักษรเลย ใครโกงเงินกองทุนจับส่งตำรวจดำเนินคดีทันที", type:"A", impact:10, msg:"คุณใช้กฎหมายและความเด็ดขาดเป็นเกราะป้องกันไม่ให้ใครมาเอาเปรียบชาวบ้าน" }
+    ]
+  },
+  {
+    interlude: "และแล้ววันสุดท้ายก็มาถึง... คุณเก็บของใส่เป้ เตรียมตัวกลับ แสงแดดตอนเย็นส่องลงมาที่หมู่บ้าน ลุงทวีเดินมาส่งพร้อมตะกร้าที่พี่ชัยสานให้ ในนั้นมีหน่อไม้ชิ้นโตที่ลุงแกแบ่งมาให้... ทุกคนมายืนรอส่งคุณด้วยรอยยิ้ม",
+    title: "วันที่ 7: คำบอกลา...ที่แปลว่าพบกันใหม่",
+    desc: "ถึงเวลาที่คุณต้องย้ายไปช่วยหมู่บ้านอื่นต่อแล้ว ชาวบ้านขอบคุณที่คุณเข้ามาทำให้ที่นี่น่าอยู่ขึ้น แต่ลึกๆ คุณรู้ดีว่าคนที่เปลี่ยนหมู่บ้านนี้... ก็คือตัวชาวบ้านเองนั่นแหละ",
+    choices: [
+      { text:"ฝากแผนงานและข้อตกลงต่างๆ ให้ผู้นำหมู่บ้านเอาไปสานต่อ ให้เขาดูแลกันเองได้", type:"P", impact:15, msg:"คุณทิ้งเครื่องมือและความรู้ไว้ให้ เพื่อให้หมู่บ้านนี้เข้มแข็งได้ด้วยตัวเอง" },
+      { text:"กอดลาทุกคนทีละคน สัญญาว่าจะเอากลับมาเยี่ยม และจะเอาเรื่องราวดีๆ ของที่นี่ไปเล่าให้คนอื่นฟัง", type:"H", impact:20, msg:"คุณจากลาด้วยรอยยิ้ม ทิ้งความทรงจำดีๆ ไว้เป็นแรงบันดาลใจให้กันและกัน" },
+      { text:"จดเบอร์ติดต่อโรงพยาบาลและหน่วยงานต่างๆ แปะไว้ที่ศาลา เผื่อมีเรื่องด่วนเขาจะได้โทรหาเองได้", type:"A", impact:10, msg:"คุณจัดการทิ้งช่องทางติดต่อไว้ให้เรียบร้อย เพื่อความอุ่นใจของทุกคน" }
+    ]
+  }
+];
+
+/* ════════════════════════════════
+   GAME FLOW
+═══════════════════════════════ */
+function showInterlude() {
+  const s = scenarios[dayIdx];
+  document.getElementById('interlude-text').innerText = s.interlude;
+  document.getElementById('interlude-page').innerText = `${String(dayIdx*2+5).padStart(2,'0')}`;
+  goTo('s-interlude');
+  if (audioCtx) masterGain.gain.setTargetAtTime(baseVol * 0.65, audioCtx.currentTime, 0.5);
+}
+
+function goToScene() {
+  const s = scenarios[dayIdx];
+  document.getElementById('scene-day-label').innerText = `วันที่ ${dayIdx+1} จาก 7`;
+  document.getElementById('scene-title').innerText = s.title;
+  document.getElementById('scene-desc').innerText   = s.desc;
+  document.getElementById('hud-day').innerText = `วันที่ ${dayIdx+1} จาก 7`;
+  document.getElementById('scene-page').innerText = `${String(dayIdx*2+6).padStart(2,'0')}`;
+
+  const list = document.getElementById('choice-list');
+  list.innerHTML = '';
+  const typeIconMap = {
+    H: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+    P: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8C8 10 5.9 16.17 3.82 19.57A1 1 0 0 0 4.93 21C8 20 10 18 12 15c1.5 3 5 5 7 5 0-4-2-8-2-12z"/></svg>`,
+    A: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  };
+  s.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'c-card';
+    btn.innerHTML = `<span class="c-card-num">${i+1}</span><span class="c-card-text">${c.text}</span><span class="c-card-type-badge type-${c.type}">${typeIconMap[c.type]}</span>`;
+    btn.onclick = () => choose(c, btn);
+    list.appendChild(btn);
+  });
+
+  goTo('s-scene');
+  updateTrust();
+  if (audioCtx) masterGain.gain.setTargetAtTime(baseVol, audioCtx.currentTime, 0.5);
+}
+
+function choose(c, cardEl) {
+  // Flash chosen state on card
+  if (cardEl) {
+    document.querySelectorAll('.c-card').forEach(el => el.classList.remove('chosen'));
+    cardEl.classList.add('chosen');
+  }
+
+  stats[c.type]++;
+  const prevTrust = trust;
+  trust = Math.min(100, Math.max(0, trust + c.impact));
+
+  const iconMap = { H: SVG.heart, P: SVG.leaf, A: SVG.shield };
+  document.getElementById('r-icon').innerHTML = iconMap[c.type];
+  document.getElementById('r-text').innerText = c.msg;
+
+  // Trust delta
+  const delta = trust - prevTrust;
+  const deltaEl = document.getElementById('r-delta');
+  const deltaText = document.getElementById('r-delta-text');
+  if (delta >= 0) {
+    deltaEl.className = 'reflect-trust-delta pos';
+    deltaEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg><span>ความเชื่อใจ +${delta}</span>`;
+  } else {
+    deltaEl.className = 'reflect-trust-delta neg';
+    deltaEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span>ความเชื่อใจ ${delta}</span>`;
+  }
+
+  setTimeout(() => {
+    document.getElementById('reflection-overlay').classList.add('show');
+  }, 220);
+
+  if (audioCtx) masterGain.gain.setTargetAtTime(baseVol * 1.3, audioCtx.currentTime, 0.2);
+  setTimeout(()=>{ if(audioCtx) masterGain.gain.setTargetAtTime(baseVol, audioCtx.currentTime, 0.8); }, 1200);
+}
+
+function nextStep() {
+  dayIdx++;
+  document.getElementById('reflection-overlay').classList.remove('show');
+  updateTrust();
+  if (dayIdx < scenarios.length) showInterlude();
+  else showConclusion();
+}
+
+function updateTrust() {
+  document.getElementById('trust-fill').style.width = trust + '%';
+  document.getElementById('trust-pct').innerText = trust + '%';
+  // Update day pips
+  const pips = document.querySelectorAll('.day-pip');
+  pips.forEach((pip, i) => {
+    pip.classList.remove('done', 'active');
+    if (i < dayIdx) pip.classList.add('done');
+    else if (i === dayIdx) pip.classList.add('active');
+  });
+}
+
+function showConclusion() {
+  document.getElementById('hud').classList.remove('visible');
+  const maxV = Math.max(stats.H, stats.P, stats.A);
+  let type, iconKey, desc;
+
+  if (stats.H === maxV) {
+    type = 'สายซัพพอร์ต — ใช้ใจแลกใจ\n(The Empathetic Supporter)';
+    iconKey = 'heart';
+    desc = `ตลอด 7 วันที่ผ่านมา ${pName} ใช้ "ความรักและความเข้าใจ" เป็นตัวนำทาง คุณทำให้ชาวบ้านรู้ว่าเขาไม่ได้สู้ลำพัง แค่การรับฟังและความอบอุ่นของ${pName} ก็ช่วยพลิกฟื้นหมู่บ้านนี้ให้มีชีวิตชีวาขึ้นมาได้แล้ว`;
+  } else if (stats.P === maxV) {
+    type = 'สายวางแผน — มองไกลถึงอนาคต\n(The Community Builder)';
+    iconKey = 'leaf';
+    desc = `${pName} มองไกลกว่าปัญหาตรงหน้า คุณสอนให้ชาวบ้านจับปลา แทนที่จะเอาปลามาให้กินฟรีๆ กติกาและกลุ่มต่างๆ ที่ช่วยตั้งขึ้น จะเป็นรากฐานให้หมู่บ้านนี้ดูแลตัวเองได้อย่างยั่งยืน`;
+  } else {
+    type = 'สายลุย — ตรงไปตรงมา พึ่งพาได้\n(The Protector)';
+    iconKey = 'shield';
+    desc = `${pName} คือคนที่ชาวบ้านอุ่นใจเมื่อมีคุณอยู่ใกล้ๆ เพราะคุณกล้าชน กล้าประสานงาน และใช้ความถูกต้องเข้าปกป้องไม่ให้ใครมาเอาเปรียบ ${pName} คือผู้ช่วยคนเก่งของชุมชนอย่างแท้จริง`;
+  }
+
+  // Set avatar
+  const avatarEl = document.getElementById('c-avatar');
+  avatarEl.innerHTML = SVG.person;
+
+  const badgeEl = document.getElementById('c-badge');
+  badgeEl.innerHTML = SVG[iconKey];
+
+  document.getElementById('c-title').innerText = type;
+  document.getElementById('c-desc').innerText  = desc;
+
+  // Animate stat bars
+  const total = Math.max(stats.H + stats.P + stats.A, 1);
+  setTimeout(() => {
+    ['H','P','A'].forEach(k => {
+      const pct = Math.round((stats[k] / total) * 100);
+      document.getElementById('stat-bar-'+k).style.width = pct + '%';
+      document.getElementById('stat-count-'+k).innerText = stats[k];
+    });
+  }, 400);
+
+  goTo('s-conclusion');
+  if (audioCtx) masterGain.gain.setTargetAtTime(baseVol * 0.4, audioCtx.currentTime, 2);
+}
+
+/* ════════════════════════════════
+   AUDIO ENGINE — Lo-fi Chill (Soft Piano + Pad + Rain)
+═══════════════════════════════ */
+let audioCtx = null, masterGain = null;
+let isPlaying = false;
+let baseVol = 0.18;
+const nodes = [];
+let melodyTimeout = null;
+let rhythmTimeout = null;
+
+// C major pentatonic — mid-high range เท่านั้น (ฟังชัดทุก speaker)
+// E4  G4  A4  B4  D5  E5  G5  A5  B5
+const PENTA = [329.63, 392.00, 440.00, 493.88, 587.33, 659.25, 783.99, 880.00, 987.77];
+
+let reverbNode = null;
+
+/* ── reverb ── */
+function makeReverb(ctx) {
+  const sr  = ctx.sampleRate;
+  const len = Math.floor(sr * 2.0);
+  const buf = ctx.createBuffer(2, len, sr);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < len; i++)
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+  }
+  const conv = ctx.createConvolver();
+  conv.buffer = buf;
+  const wet = ctx.createGain();
+  wet.gain.value = 0.15; // reverb เบา ไม่ฟุ้ง
+  conv.connect(wet);
+  wet.connect(masterGain);
+  return conv;
+}
+
+/* ── soft bell-piano tone ── */
+// ใช้แค่ sine wave สองชั้น ไม่มี sub-bass เลย
+// fundamental อยู่ที่ 330–988 Hz — ฟังชัดทุก device
+function playPiano(freq, time, vel) {
+  vel = vel || 0.032;
+
+  // fundamental
+  const osc1 = audioCtx.createOscillator();
+  const g1   = audioCtx.createGain();
+  osc1.type = 'sine';
+  osc1.frequency.value = freq;
+  g1.gain.setValueAtTime(0, time);
+  g1.gain.linearRampToValueAtTime(vel, time + 0.012);
+  g1.gain.exponentialRampToValueAtTime(vel * 0.3, time + 0.15);
+  g1.gain.exponentialRampToValueAtTime(0.0001, time + 2.2);
+
+  // harmonic ที่ 2x (octave) เบา ๆ ให้มีชีวิต
+  const osc2 = audioCtx.createOscillator();
+  const g2   = audioCtx.createGain();
+  osc2.type = 'sine';
+  osc2.frequency.value = freq * 2.0;
+  g2.gain.setValueAtTime(0, time);
+  g2.gain.linearRampToValueAtTime(vel * 0.18, time + 0.010);
+  g2.gain.exponentialRampToValueAtTime(0.0001, time + 0.8);
+
+  // highpass ตัด sub-bass ออกทั้งหมด (< 200Hz)
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 200;
+  hp.Q.value = 0.5;
+
+  // lowpass ตัดความแหลมสูงเกิน
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 4000;
+  lp.Q.value = 0.4;
+
+  osc1.connect(g1); osc2.connect(g2);
+  g1.connect(hp);  g2.connect(hp);
+  hp.connect(lp);
+  lp.connect(masterGain);
+  if (reverbNode) lp.connect(reverbNode);
+
+  osc1.start(time); osc1.stop(time + 2.4);
+  osc2.start(time); osc2.stop(time + 1.0);
+}
+
+/* ── melody sequence ── */
+const MELODY_PHRASES = [
+  [4, 6, 7, 6, 4, 2, 4, 6],
+  [7, 6, 4, 2, 1, 2, 4],
+  [2, 4, 6, 4, 2, 0, 2],
+  [4, 6, 7, 4],
+  [6, 7, 8, 7, 6, 4, 6],
+];
+
+function startMelody() {
+  const LOOK_AHEAD   = 0.3;
+  const SCHEDULE_INT = 80;
+  const BEAT         = 0.50;
+
+  const SEQUENCE = [];
+  MELODY_PHRASES.forEach(phrase => {
+    phrase.forEach(ni => SEQUENCE.push(ni));
+    SEQUENCE.push(null);
+    SEQUENCE.push(null);
+  });
+
+  let seqIdx     = 0;
+  let nextNoteAt = audioCtx.currentTime + 0.2;
+  let schedTimer = null;
+
+  function schedule() {
+    if (!isPlaying || !audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    while (nextNoteAt < audioCtx.currentTime + LOOK_AHEAD) {
+      const ni = SEQUENCE[seqIdx % SEQUENCE.length];
+      if (ni !== null) {
+        const freq = PENTA[ni % PENTA.length];
+        const vel  = 0.026 + Math.random() * 0.010;
+        playPiano(freq, nextNoteAt, vel);
+      }
+      seqIdx++;
+      nextNoteAt += BEAT * (0.97 + Math.random() * 0.06);
+    }
+
+    schedTimer = setTimeout(schedule, SCHEDULE_INT);
+    melodyTimeout = schedTimer;
+  }
+
+  nextNoteAt = audioCtx.currentTime + 0.2;
+  schedule();
+}
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0;
+  // Limiter ป้องกันเสียงแตกทั้งคอมและมือถือ
+  const limiter = audioCtx.createDynamicsCompressor();
+  limiter.threshold.value = -8;
+  limiter.knee.value = 4;
+  limiter.ratio.value = 15;
+  limiter.attack.value = 0.002;
+  limiter.release.value = 0.15;
+  masterGain.connect(limiter);
+  limiter.connect(audioCtx.destination);
+  reverbNode = makeReverb(audioCtx);
+}
+
+function toggleAudio() {
+  if (!audioCtx) initAudio();
+  if (!isPlaying) {
+    isPlaying = true;
+    // iOS/Android ต้อง resume หลัง user gesture เสมอ
+    audioCtx.resume().then(() => {
+      masterGain.gain.setTargetAtTime(baseVol, audioCtx.currentTime, 1.0);
+      startMelody();
+    });
+    document.getElementById('icon-mute').style.display = 'none';
+    document.getElementById('icon-play').style.display = 'block';
+    document.getElementById('audio-bar').classList.remove('collapsed');
+  } else {
+    isPlaying = false;
+    masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.8);
+    document.getElementById('icon-mute').style.display = 'block';
+    document.getElementById('icon-play').style.display = 'none';
+    document.getElementById('audio-bar').classList.add('collapsed');
+    if (melodyTimeout) clearTimeout(melodyTimeout);
+    melodyTimeout = null;
+  }
+}
+
+function setVolume(v) {
+  baseVol = parseFloat(v);
+  if (isPlaying && audioCtx) masterGain.gain.setTargetAtTime(baseVol, audioCtx.currentTime, 0.3);
+}
+
+/* ════════════════════════════════
+   PARTICLES
+═══════════════════════════════ */
+(function spawnParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 2 + Math.random() * 3;
+    p.style.cssText = `left:${Math.random()*100}%;bottom:-${size}px;width:${size}px;height:${size}px;animation-duration:${14+Math.random()*18}s;animation-delay:${Math.random()*14}s;opacity:${0.15+Math.random()*0.25};`;
+    container.appendChild(p);
+  }
+})();
+
+/* ════════════════════════════════
+   NAME → GENDER SYNC
+═══════════════════════════════ */
+document.getElementById('inp-name').addEventListener('input', function() {
+  onNameInput();
+});
+function onNameInput() {
+  const val = document.getElementById('inp-name').value;
+  document.getElementById('name-count').innerText = val.length + '/20';
+  document.getElementById('btn-name-next').disabled = val.trim().length === 0;
+}
+</script>
+</body>
+</html>
